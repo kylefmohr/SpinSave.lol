@@ -1,12 +1,17 @@
 import json
 from collections import OrderedDict
+
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from flask import Flask, render_template, request
+plt.switch_backend('Agg')
+from flask import Flask, render_template, request, redirect
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads/'
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1000
+# app.config['UPLOAD_FOLDER'] = 'static/'
+# app.config['MAX_CONTENT_LENGTH'] = 1024 * 1000
 
 
 @app.route('/')
@@ -14,11 +19,12 @@ def upload_file():
     return render_template('index.html')
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/', methods=['POST'])
 def work_with_file():
     if request.method == 'POST':
         file = request.files['file']
-        file.save(secure_filename(file.filename))
+        if file.filename != '':
+            file.save(secure_filename(file.filename))
 
         with open(file.filename, 'r') as f:
             unparsed_data = f.read()
@@ -42,12 +48,10 @@ def work_with_file():
                     regular_song_attempts[current_song['key']] = current_song['val']
 
         song_attempts = OrderedDict(sorted(regular_song_attempts.items(), key=lambda t: t[1]))
-
+        plt.ioff()
         width = 1
-        fig, ax = plt.subplots()
         my_dpi = 108
-        plt.figure(figsize=(14, 11), dpi=my_dpi)
-        plt.ion()
+        fig = plt.figure(figsize=(14, 11), dpi=my_dpi)
 
         song_attempts = json.loads(json.dumps(song_attempts))
         song_attempts = dict(song_attempts.items())
@@ -56,7 +60,6 @@ def work_with_file():
 
         stats = song_attempts.values()
         new_stats = {}
-
 
         for i, current_song in enumerate(stats):
             current_song = json.loads(current_song)
@@ -69,11 +72,17 @@ def work_with_file():
             plt.xticks(rotation=45, ha='right', fontsize=9)
 
             plt.bar(current_song_name, times_attempted, width, label="Times Attempted", color=(0xf7/255, 0x67/255, 0xff/255, 1), edgecolor='black')
+
             plt.bar(current_song_name, times_completed, width, label="Times Completed", color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')
 
-        ax = plt.gca()
+
+        fig.savefig('static/attempts.png', dpi=108)
         plt.show()
+        return redirect('static/attempts.png')
 
         # ax.bar(song_attempts['statsUniqueString'], song_attempts['timesAttemptedDifficulty'][4], width, label='Times Attempted')
         # ax.bar(song_attempts['statsUniqueString'], song_attempts['timesCompletedDifficulty'][4], width, bottom=song_attempts['timesAttemptedDifficulty'][4], label='Times Completed')
         # plt.show()
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80, debug=True)
