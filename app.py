@@ -26,7 +26,7 @@ def work_with_file():
         if file.filename != '':
             file.save(secure_filename(file.filename))
 
-        with open(file.filename, 'r') as f:
+        with open(file.filename, 'r', encoding="utf8") as f:
             unparsed_data = f.read()
 
         json_data = json.loads(unparsed_data)
@@ -63,9 +63,13 @@ def work_with_file():
 
         for i, current_song in enumerate(stats):
             current_song = json.loads(current_song)
-            current_song_name = current_song["statsUniqueString"][:-6]  # statsUniqueString is usually, for example, "I See Lite_Stats"
-            times_attempted = current_song["timesAttemptedDifficulty"][difficulty_index['XD']]
-            times_completed = current_song["timesCompletedDifficulty"][difficulty_index['XD']]
+            try:
+                current_song_name = current_song["statsUniqueString"][:-6]  # statsUniqueString is usually, for example, "I See Lite_Stats"
+                times_attempted = current_song["timesAttemptedDifficulty"][difficulty_index['XD']]
+                times_completed = current_song["timesCompletedDifficulty"][difficulty_index['XD']]
+            except KeyError:
+                pass
+
             print(current_song_name)
             print(times_attempted)
             print(times_completed)
