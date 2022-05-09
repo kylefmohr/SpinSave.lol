@@ -31,7 +31,8 @@ def work_with_file():
         song_attempts_data = json_data['largeStringValuesContainer']['values']
 
         difficulty_index = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4}  # save file records song attempts/completions as a 5 item array
-
+        difficulty = request.values.get('difficulty')
+        difficulty_index = difficulty_index[difficulty]
         custom_song_attempts = {}
         regular_song_attempts = {}
         for current_song in song_attempts_data:
@@ -64,8 +65,8 @@ def work_with_file():
             current_song = json.loads(current_song)
             try:  # needed to try/except this after testing this on other users saved data. It wasn't necessary on mine, but multiple other users ran into errors without it
                 current_song_name = current_song["statsUniqueString"][:-6]  # statsUniqueString is usually, for example, "I See Lite_Stats"
-                times_attempted = current_song["timesAttemptedDifficulty"][difficulty_index['XD']]
-                times_completed = current_song["timesCompletedDifficulty"][difficulty_index['XD']]
+                times_attempted = current_song["timesAttemptedDifficulty"][difficulty_index]
+                times_completed = current_song["timesCompletedDifficulty"][difficulty_index]
             except KeyError:
                 pass
 
