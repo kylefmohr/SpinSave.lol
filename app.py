@@ -76,17 +76,12 @@ def work_with_file():
             plt.xticks(rotation=45, ha='right', fontsize=9)
 
             plt.bar(current_song_name, times_attempted, width, label="Times Attempted", color=(0xf7/255, 0x67/255, 0xff/255, 1), edgecolor='black')
-
             plt.bar(current_song_name, times_completed, width, label="Times Completed", color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')
 
 
         fig.savefig('static/attempts.png', dpi=108)
         plt.show()
         return redirect('static/attempts.png')
-
-        # ax.bar(song_attempts['statsUniqueString'], song_attempts['timesAttemptedDifficulty'][4], width, label='Times Attempted')
-        # ax.bar(song_attempts['statsUniqueString'], song_attempts['timesCompletedDifficulty'][4], width, bottom=song_attempts['timesAttemptedDifficulty'][4], label='Times Completed')
-        # plt.show()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
