@@ -4,9 +4,9 @@ A WIP web application to help you visualize your Spin Rhythm save file
 If you'd like to run/host this yourself, make sure Python is installed, clone this project, and install the depenedencies with `pip3 install -r requirements.txt`. Then, just run app.py and it should be accessible at http://127.0.0.1:80
 
 TODO:
-- [ ] Fix current bar graph
-  - [ ] add title
-  - [ ] axis labels
+- [x] Fix current bar graph
+  - [x] add title
+  - [x] axis labels
   - [x] ensure song titles don't get cut off
 - [ ] Add more stats! Radio checkbox to choose before upload?
   - [ ] Best accuracy per song

@@ -75,10 +75,15 @@ def work_with_file():
             print(times_completed)
             plt.xticks(rotation=45, ha='right', fontsize=9)
 
-            plt.bar(current_song_name, times_attempted, width, label="Times Attempted", color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')
+            plt.bar(current_song_name, times_attempted, width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')
             # The colors are formatted like that because I had a hexadecimal color value (0xf767ff), but matplotlib wants an RGB decimal value, where 1, 0, 1, would be 0xFF00FF. The last number is the transparency. edgecolor gives the bars an outline
-            plt.bar(current_song_name, times_completed, width, label="Times Completed", color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')
+            plt.bar(current_song_name, times_completed, width, color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')
         plt.gcf().subplots_adjust(bottom=0.14)
+        ax = plt.gca()
+        ax.set_ylabel('Times Attempted/Completed')
+        ax.set_xlabel('Song')
+        ax.legend(['Times Attempted', 'Times Completed'])
+        ax.set_title('Song Attempts vs. Completions')
         fig.savefig('static/attempts.png', dpi=108)
         plt.show()
         return redirect('static/attempts.png')
