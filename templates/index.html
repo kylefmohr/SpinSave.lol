@@ -3,17 +3,22 @@
    <body>
       <form action = "" method = "POST"
          enctype = "multipart/form-data">
-         <input type = "file" name = "file" />
+         <input type = "file" name = "file" /><br><br>
          <input type = "radio" id="easy" name="difficulty" value="easy">
-         <label for="easy">Easy</label>
+         <label for="easy">Easy</label><br>
          <input type = "radio" id="medium" name="difficulty" value="medium">
-         <label for="medium">Medium</label>
+         <label for="medium">Medium</label><br>
          <input type = "radio" id="hard" name="difficulty" value="hard">
-         <label for="hard">Hard</label>
+         <label for="hard">Hard</label><br>
          <input type = "radio" id="expert" name="difficulty" value="expert">
-         <label for="expert">Expert</label>
+         <label for="expert">Expert</label><br>
          <input type = "radio" id="XD" name="difficulty" value="XD" checked>
-         <label for="XD">XD</label>
+         <label for="XD">XD</label><br>
+         <p>Sort by: <p>
+         <input type = "radio" id="Attempts" name="sort" value="Attempts" checked>
+         <label for="Attempts">Attempts</label><br>
+         <input type = "radio" id="Completions" name="sort" value="Completions">
+         <label for="Completions">Completions</label><br><br>
          <input type = "submit"/><br>
          <h3>This currently shows your number of song attempts vs. number of completions. More functionality is planned, see <a href="https://github.com/kylefmohr/SpinSave.lol">https://github.com/kylefmohr/SpinSave.lol</a> to report an issue or request a feature!</h3>
          <h3>On Windows, your save file is located at: %USERPROFILE%\AppData\LocalLow\Super Spin Digital\Spin Rhythm XD\(your Steam ID)\savedata.dat </h3>

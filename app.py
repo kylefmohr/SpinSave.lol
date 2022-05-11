@@ -33,6 +33,9 @@ def work_with_file():
         difficulty_index = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4}  # save file records song attempts/completions as a 5 item array
         difficulty = request.values.get('difficulty')
         difficulty_index = difficulty_index[difficulty]
+
+        sort_by = request.values.get('sort')
+
         custom_song_attempts = {}
         regular_song_attempts = {}
         for current_song in song_attempts_data:
@@ -46,38 +49,44 @@ def work_with_file():
                 else:
                     regular_song_attempts[current_song['key']] = current_song['val']
 
-        song_attempts = OrderedDict(sorted(regular_song_attempts.items(), key=lambda t: t[1]))
         plt.ioff()
         width = 1
         my_dpi = 108
 
         fig = plt.figure(figsize=(18, 14), dpi=my_dpi)
 
-
-        song_attempts = json.loads(json.dumps(song_attempts))
+        song_attempts = json.loads(json.dumps(regular_song_attempts))
         song_attempts = dict(song_attempts.items())
         song_attempts = {k: v for k, v in song_attempts.items() if v is not None and v != 0 and v != ''}
         song_attempts = dict(song_attempts.items())
 
-        stats = song_attempts.values()
+        stats = list(song_attempts.values())
+        #stats = sorted(stats[difficulty_index])
+        stats = json.loads(json.dumps(stats))
+        new_stats = {}
+        final_stats = {'song_title': [], 'song_attempts': [], 'song_completions': []}
+        for i in range(len(stats)):
+            new_stats[i] = json.loads(stats[i])
+            new_stats[i] = new_stats[i].values()
+            new_stats[i] = list(new_stats[i])
+            final_stats['song_title'].append(new_stats[i][6][:-6])
+            final_stats['song_attempts'].append(new_stats[i][3][difficulty_index])
+            final_stats['song_completions'].append(new_stats[i][4][difficulty_index])
 
-        for i, current_song in enumerate(stats):
-            current_song = json.loads(current_song)
-            try:  # needed to try/except this after testing this on other users saved data. It wasn't necessary on mine, but multiple other users ran into errors without it
-                current_song_name = current_song["statsUniqueString"][:-6]  # statsUniqueString is usually, for example, "I See Lite_Stats"
-                times_attempted = current_song["timesAttemptedDifficulty"][difficulty_index]
-                times_completed = current_song["timesCompletedDifficulty"][difficulty_index]
-            except KeyError:
-                pass
+        if sort_by == 'Attempts':
+            zipped_lists = zip(final_stats['song_attempts'], final_stats['song_completions'], final_stats['song_title'])  # whichever dict is listed first will be the one that gets sorted
+            sorted_stats = sorted(zipped_lists, reverse=True)
+            tuples = zip(*sorted_stats)
+            song_attempts, song_completions, song_title = [list(t) for t in tuples]
+        elif sort_by == 'Completions':
+            zipped_lists = zip(final_stats['song_completions'], final_stats['song_attempts'], final_stats['song_title'])  # whichever dict is listed first will be the one that gets sorted
+            sorted_stats = sorted(zipped_lists, reverse=True)
+            tuples = zip(*sorted_stats)
+            song_completions, song_attempts, song_title = [list(t) for t in tuples]
+        plt.xticks(rotation=45, ha='right', fontsize=9)
+        plt.bar(song_title, song_attempts, width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')
+        plt.bar(song_title, song_completions, width, color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')
 
-            print(current_song_name)
-            print(times_attempted)
-            print(times_completed)
-            plt.xticks(rotation=45, ha='right', fontsize=9)
-
-            plt.bar(current_song_name, times_attempted, width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')
-            # The colors are formatted like that because I had a hexadecimal color value (0xf767ff), but matplotlib wants an RGB decimal value, where 1, 0, 1, would be 0xFF00FF. The last number is the transparency. edgecolor gives the bars an outline
-            plt.bar(current_song_name, times_completed, width, color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')
         plt.gcf().subplots_adjust(bottom=0.14)
         ax = plt.gca()
         ax.set_ylabel('Times Attempted/Completed')
@@ -85,7 +94,7 @@ def work_with_file():
         ax.legend(['Times Attempted', 'Times Completed'])
         ax.set_title('Song Attempts vs. Completions')
         fig.savefig('static/attempts.png', dpi=108)
-        plt.show()
+        #plt.show()
         return redirect('static/attempts.png')
 
 if __name__ == '__main__':
