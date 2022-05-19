@@ -90,22 +90,22 @@ def work_with_file():
         stats = json.loads(json.dumps(stats))
         new_stats = {}
         final_stats = {'song_title': [], 'song_attempts': [], 'song_completions': [], 'high_score': [], 'best_accuracy': [], 'best_streak': []}
-        custom_lookups = 0  # counter for how many custom songs we've looked up
         for i in range(len(stats)):  # finally, this is the for loop that loops through each song in the list of either custom or original songs
             new_stats[i] = json.loads(stats[i])
             new_stats[i] = new_stats[i].values()
             new_stats[i] = list(new_stats[i])
+            # try:
+            #     if custom_or_original == 'custom':
+            #         if custom_lookups <= 50:  # limit to 50 custom songs, otherwise we risk overloading the spinshare api, and also it doesn't look good on a bar graph
+            #             title = custom_string_to_title(new_stats[i][6][:-6])
+            #             if title == '':
+            #                 continue  # skip to next song if we can't find the song title
+            #             else:
+            #                 custom_lookups += 1
+            #                 final_stats['song_title'].append(title)
+            #     else:
             try:
-                if custom_or_original == 'custom':
-                    if custom_lookups <= 50:  # limit to 50 custom songs, otherwise we risk overloading the spinshare api, and also it doesn't look good on a bar graph
-                        title = custom_string_to_title(new_stats[i][6][:-6])
-                        if title == '':
-                            continue  # skip to next song if we can't find the song title
-                        else:
-                            custom_lookups += 1
-                            final_stats['song_title'].append(title)
-                else:
-                    final_stats['song_title'].append(new_stats[i][6][:-6])  # if it's an original song, it's much easier to parse the song title from the save data
+                final_stats['song_title'].append(new_stats[i][6][:-6])
                 final_stats['song_attempts'].append(new_stats[i][3][difficulty_index])
                 final_stats['song_completions'].append(new_stats[i][4][difficulty_index])
                 final_stats['high_score'].append(new_stats[i][0][difficulty_index]['valueForDifficulty'])
@@ -116,22 +116,50 @@ def work_with_file():
 
         # print(final_stats['best_accuracy'])
         # print(final_stats['best_streak'])
+        song_attempts = []
+        song_completions = []
+        song_titles = []
         if sort_by == 'Attempts':  # did user select to sort by attempts?
             zipped_lists = zip(final_stats['song_attempts'], final_stats['song_completions'], final_stats['song_title'])  # whichever dict is listed first will be the one that gets sorted
             sorted_stats = sorted(zipped_lists, reverse=True)
             tuples = zip(*sorted_stats)
-            song_attempts, song_completions, song_title = [list(t) for t in tuples]
+            song_attempts, song_completions, song_titles = [list(t) for t in tuples]
         elif sort_by == 'Completions':  # or by completions?
             zipped_lists = zip(final_stats['song_completions'], final_stats['song_attempts'], final_stats['song_title'])  # whichever dict is listed first will be the one that gets sorted
             sorted_stats = sorted(zipped_lists, reverse=True)
             tuples = zip(*sorted_stats)
-            song_completions, song_attempts, song_title = [list(t) for t in tuples]
+            song_completions, song_attempts, song_titles = [list(t) for t in tuples]
+        if custom_or_original == 'custom':
+            custom_lookups = 0  # counter for how many custom songs we've looked up
+
+            for i in range(len(song_titles)):
+                try:
+                    if custom_lookups < 50:
+                        song_titles[i] = custom_string_to_title(song_titles[i])
+                        if song_titles[i] == '' or song_attempts[i] == 0:
+                            song_titles.remove(song_titles[i])
+                            song_attempts.remove(song_attempts[i])
+                            song_completions.remove(song_completions[i])
+                            continue
+                        else:
+                            custom_lookups += 1
+                    else:
+                        song_titles.remove(song_titles[i])
+                        song_attempts.remove(song_attempts[i])
+                        song_completions.remove(song_completions[i])
+                except IndexError:
+                    print('IndexError: ' + str(i))
+                    pass
+
+
+
         plt.xticks(rotation=45, ha='right', fontsize=9)  # customize the x-axis labels (song titles)
-        plt.bar(song_title, song_attempts, width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')  # plot the attempts bar graph
-        plt.bar(song_title, song_completions, width, color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')  # plot the completions bar graph
+        plt.bar(song_titles[:50], song_attempts[:50], width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')  # plot the attempts bar graph
+        plt.bar(song_titles[:50], song_completions[:50], width, color=(0x57/255, 0xbe/255, 0xfc/255, 1), edgecolor='black')  # plot the completions bar graph
 
         plt.gcf().subplots_adjust(bottom=0.14)  # adjust the bottom margin to make room for long song titles
         ax = plt.gca()
+
         ax.set_ylabel('Times Attempted/Completed')  # decorating the graph with labels, legend, etc.
         ax.set_xlabel('Song')
         ax.legend(['Times Attempted', 'Times Completed'])
