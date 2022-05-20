@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
+
 # utilizing spinsha.re's api to translate save file custom song title to actual custom song title
 # for example, it would take a string "CUSTOM_spinshare_5e9bf7e70019a_Stats" and translate it to "Rainbow Road"
 def custom_string_to_title(title):
@@ -87,13 +88,21 @@ def work_with_file():
 
         song_attempts = json.loads(json.dumps(song_attempts))
         song_attempts = dict(song_attempts.items())
-        song_attempts = {k: v for k, v in song_attempts.items() if v is not None and v != 0 and v != ''} # remove songs that have no attempts or are empty
+        song_attempts = {k: v for k, v in song_attempts.items()
+                         if v is not None
+                         and v != 0
+                         and v != ''}  # remove songs that have no attempts or are empty
         song_attempts = dict(song_attempts.items())
 
         stats = list(song_attempts.values())
         stats = json.loads(json.dumps(stats))
         new_stats = {}
-        final_stats = {'song_title': [], 'song_attempts': [], 'song_completions': [], 'high_score': [], 'best_accuracy': [], 'best_streak': []}
+        final_stats = {'song_title': [],
+                       'song_attempts': [],
+                       'song_completions': [],
+                       'high_score': [],
+                       'best_accuracy': [],
+                       'best_streak': []}
         for i in range(len(stats)):  # loops through each song in the list of either custom or original songs
             new_stats[i] = json.loads(stats[i])
             new_stats[i] = new_stats[i].values()
