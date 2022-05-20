@@ -19,19 +19,20 @@ cache = Cache(app, config={'CACHE_TYPE': 'FileSystemCache', 'CACHE_DIR': 'cache'
 def custom_string_to_title(title):
     title1 = title.split('_')[1]
     title2 = title.split('_')[2]
-    fileReference = title1 + "_" + title2
-    if "spinshare_" not in fileReference:  # not a spinsha.re song, can't look up the title
+    file_reference = title1 + "_" + title2
+    if "spinshare_" not in file_reference:  # not a spinsha.re song, can't look up the title
         return ''
     else:
-        url = "https://spinsha.re/api/song/" + fileReference
+        url = "https://spinsha.re/api/song/" + file_reference
         r = requests.get(url)
         data = r.json()
-        data = data['data'] # drill down one level
+        data = data['data']  # drill down one level
+
         try:
             title = data['title']
         except:
             title = ''
-        print(fileReference + ": " + title)
+        print(file_reference + ": " + title)
         return title
 
 
@@ -53,15 +54,16 @@ def work_with_file():
             unparsed_data = f.read()
 
         json_data = json.loads(unparsed_data)
-        song_attempts_data = json_data['largeStringValuesContainer']['values'] # just drilling down a couple levels in the json data so we can more easily ignore irrelevant data
+        song_attempts_data = json_data['largeStringValuesContainer']['values']  # drilling down to the data we want
         
-        custom_or_original = request.values.get("custom") # get the value of the custom radio button
-        
-        difficulty_index = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4}  # save file records song attempts/completions as a 5 item array
-        difficulty = request.values.get('difficulty') # get the value of the difficulty radio button
+        custom_or_original = request.values.get("custom")  # get the value of the custom radio button
+
+        # save file records song attempts/completions as a 5 item array
+        difficulty_index = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4}
+        difficulty = request.values.get('difficulty')  # get the value of the difficulty radio button
         difficulty_index = difficulty_index[difficulty]
 
-        sort_by = request.values.get('sort') # get the value of the sort radio button
+        sort_by = request.values.get('sort')  # get the value of the sort radio button (Attempts or Completions)
 
         song_attempts = {}
         for current_song in song_attempts_data:  # separate songs into custom and regular, and remove extraneous entries
@@ -69,20 +71,22 @@ def work_with_file():
                 pass
             else:
                 if current_song['key'].startswith('CUSTOM'): # all custom songs start with CUSTOM_
-                    if custom_or_original == 'custom': # did user select custom songs?
+                    if custom_or_original == 'custom': # did user select custom song radio button?
                         song_attempts[current_song['key']] = current_song['val']
-
-                elif 'Random' in current_song['key'] or 'Calibration' in current_song['key'] or 'Create Custom' in current_song['key'] or 'CreateCustomTrack' in current_song['key']:   # more junk data, doesn't accurately show how many times you've attempted a random song, calibration tool value seems incorrect as well
+                elif 'Random' in current_song['key'] \
+                        or 'Calibration' in current_song['key'] \
+                        or 'Create Custom' in current_song['key'] \
+                        or 'CreateCustomTrack' in current_song['key']:   # removing junk data
                     pass
                 else:
-                    if custom_or_original == 'original': # or did user select original songs?
+                    if custom_or_original == 'original':  # or did user select original songs?
                         song_attempts[current_song['key']] = current_song['val']
 
-        plt.ioff() # turn off interactive mode for plotting the bar graph, since we're just rendering it to a static image
+        plt.ioff()  # turn off interactive mode for the graph, since we're returning an image
         width = 1
         my_dpi = 108
 
-        fig = plt.figure(figsize=(18, 14), dpi=my_dpi) # customize the chart size
+        fig = plt.figure(figsize=(18, 14), dpi=my_dpi)  # customize the chart size
 
         song_attempts = json.loads(json.dumps(song_attempts))
         song_attempts = dict(song_attempts.items())
@@ -93,20 +97,11 @@ def work_with_file():
         stats = json.loads(json.dumps(stats))
         new_stats = {}
         final_stats = {'song_title': [], 'song_attempts': [], 'song_completions': [], 'high_score': [], 'best_accuracy': [], 'best_streak': []}
-        for i in range(len(stats)):  # finally, this is the for loop that loops through each song in the list of either custom or original songs
+        for i in range(len(stats)):  # loops through each song in the list of either custom or original songs
             new_stats[i] = json.loads(stats[i])
             new_stats[i] = new_stats[i].values()
             new_stats[i] = list(new_stats[i])
-            # try:
-            #     if custom_or_original == 'custom':
-            #         if custom_lookups <= 50:  # limit to 50 custom songs, otherwise we risk overloading the spinshare api, and also it doesn't look good on a bar graph
-            #             title = custom_string_to_title(new_stats[i][6][:-6])
-            #             if title == '':
-            #                 continue  # skip to next song if we can't find the song title
-            #             else:
-            #                 custom_lookups += 1
-            #                 final_stats['song_title'].append(title)
-            #     else:
+
             try:
                 final_stats['song_title'].append(new_stats[i][6][:-6])
                 final_stats['song_attempts'].append(new_stats[i][3][difficulty_index])
@@ -117,8 +112,6 @@ def work_with_file():
             except IndexError:
                 pass
 
-        # print(final_stats['best_accuracy'])
-        # print(final_stats['best_streak'])
         song_attempts = []
         song_completions = []
         song_titles = []
@@ -138,23 +131,27 @@ def work_with_file():
             for i in range(len(song_titles)):
                 try:
                     if custom_lookups < 50:
-                        song_titles[i] = custom_string_to_title(song_titles[i])
-                        if song_titles[i] == '' or song_attempts[i] == 0:
+                        translated_title = custom_string_to_title(song_titles[i])   # rename to the actual song title
+                        # if lookup fails, or if song has never been attempted, remove it from the list
+                        if translated_title == '' or song_attempts[i] == 0:
                             song_titles.remove(song_titles[i])
                             song_attempts.remove(song_attempts[i])
                             song_completions.remove(song_completions[i])
                             continue
-                        else:
+                        # if we've already looked up another version of this song, don't increment the counter
+                        elif translated_title in song_titles:
+                            index = song_titles.index(translated_title)
+                            song_attempts[index] += song_attempts[i]  # combine the attempts and completions
+                            song_completions[index] += song_completions[i]
+                        else:  # lookup successful, first time we've seen this song, increment counter
+                            song_titles[i] = translated_title
                             custom_lookups += 1
-                    else:
+                    else:  # we've collected our 50 custom songs, now prune the rest
                         song_titles.remove(song_titles[i])
                         song_attempts.remove(song_attempts[i])
                         song_completions.remove(song_completions[i])
                 except IndexError:
-                    print('IndexError: ' + str(i))
                     pass
-
-
 
         plt.xticks(rotation=45, ha='right', fontsize=9)  # customize the x-axis labels (song titles)
         plt.bar(song_titles[:50], song_attempts[:50], width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')  # plot the attempts bar graph
@@ -169,6 +166,7 @@ def work_with_file():
         ax.set_title('Song Attempts vs. Completions')
         fig.savefig('static/attempts.png', dpi=108)
         return redirect('static/attempts.png')  # return the graph to the user
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
