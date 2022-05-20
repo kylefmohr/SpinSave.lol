@@ -8,12 +8,15 @@ import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 from flask import Flask, render_template, request, redirect
 from werkzeug.utils import secure_filename
+from flask_caching import Cache
 
 app = Flask(__name__)
+cache = Cache(app, config={'CACHE_TYPE': 'FileSystemCache', 'CACHE_DIR': 'cache', 'CACHE_THRESHOLD': 25000, 'CACHE_IGNORE_ERRORS': True})
 
 
 # utilizing spinsha.re's api to translate save file custom song title to actual custom song title
 # for example, it would take a string "CUSTOM_spinshare_5e9bf7e70019a_Stats" and translate it to "Rainbow Road"
+@cache.memoize()
 def custom_string_to_title(title):
     title1 = title.split('_')[1]
     title2 = title.split('_')[2]
