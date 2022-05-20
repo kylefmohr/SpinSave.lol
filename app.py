@@ -136,31 +136,43 @@ def work_with_file():
             song_completions, song_attempts, song_titles = [list(t) for t in tuples]
         if custom_or_original == 'custom':
             custom_lookups = 0  # counter for how many custom songs we've looked up
-
+            custom_song_titles = []  # list of custom song titles
+            custom_song_attempts = []  # list of custom song attempts
+            custom_song_completions = []  # list of custom song completions
             for i in range(len(song_titles)):
                 try:
                     if custom_lookups < 50:
                         translated_title = custom_string_to_title(song_titles[i])   # rename to the actual song title
                         # if lookup fails, or if song has never been attempted, remove it from the list
                         if translated_title == '' or song_attempts[i] == 0:
-                            song_titles.remove(song_titles[i])
-                            song_attempts.remove(song_attempts[i])
-                            song_completions.remove(song_completions[i])
+                            # song_titles.remove(song_titles[i])
+                            # song_attempts.remove(song_attempts[i])
+                            # song_completions.remove(song_completions[i])
+                            # continue
                             continue
                         # if we've already looked up another version of this song, don't increment the counter
-                        elif translated_title in song_titles:
+                        elif translated_title in custom_song_titles:
                             index = song_titles.index(translated_title)
-                            song_attempts[index] += song_attempts[i]  # combine the attempts and completions
-                            song_completions[index] += song_completions[i]
+                            custom_song_attempts[index] += song_attempts[i]  # combine the attempts and completions
+                            custom_song_completions[index] += song_completions[i]
+                            continue
                         else:  # lookup successful, first time we've seen this song, increment counter
                             song_titles[i] = translated_title
+                            custom_song_titles.append(translated_title)
+                            custom_song_attempts.append(song_attempts[i])
+                            custom_song_completions.append(song_completions[i])
                             custom_lookups += 1
                     else:  # we've collected our 50 custom songs, now prune the rest
-                        song_titles.remove(song_titles[i])
-                        song_attempts.remove(song_attempts[i])
-                        song_completions.remove(song_completions[i])
+                        # song_titles.remove(song_titles[i])
+                        # song_attempts.remove(song_attempts[i])
+                        # song_completions.remove(song_completions[i])
+                        pass
                 except IndexError:
                     pass
+            song_titles = custom_song_titles
+            song_attempts = custom_song_attempts
+            song_completions = custom_song_completions
+            #  end of 'if custom'
 
         plt.xticks(rotation=45, ha='right', fontsize=9)  # customize the x-axis labels (song titles)
         plt.bar(song_titles[:50], song_attempts[:50], width, color=(0xf7/0xff, 0x67/0xff, 0xff/0xff, 1), edgecolor='black')  # plot the attempts bar graph
