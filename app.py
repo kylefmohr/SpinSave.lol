@@ -80,6 +80,7 @@ def work_with_file():
                         song_attempts[current_song['key']] = current_song['val']
 
         plt.ioff()  # turn off interactive mode for the graph, since we're returning an image
+        width = 1
         my_dpi = 108
 
         fig = plt.figure(figsize=(18, 14), dpi=my_dpi)  # customize the chart size
