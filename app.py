@@ -1,8 +1,8 @@
 import json
-
+import os
 import matplotlib
 import requests
-
+from pathlib import Path
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
@@ -11,26 +11,80 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
+
 # utilizing spinsha.re's api to translate save file custom song title to actual custom song title
 # for example, it would take a string "CUSTOM_spinshare_5e9bf7e70019a_Stats" and translate it to "Rainbow Road"
-def custom_string_to_title(title):
+def custom_string_to_title(title, difficulty_lookup_string):
     title1 = title.split('_')[1]
     title2 = title.split('_')[2]
     file_reference = title1 + "_" + title2
     if "spinshare_" not in file_reference:  # not a spinsha.re song, can't look up the title
         return ''
     else:
-        url = "https://spinsha.re/api/song/" + file_reference
-        r = requests.get(url)
-        data = r.json()
-        data = data['data']  # drill down one level
+        if local_lookup(file_reference) != '':  # first attempt looking up the song in the local cache
+            return local_lookup(file_reference)
+        else:  # if the song is not in the local cache, then use the api
+            url = "https://spinsha.re/api/song/" + file_reference
+            r = requests.get(url)
+            data = r.json()
+            data = data['data']  # drill down one level
 
-        try:
-            title = data['title']
-        except:
-            title = ''
-        print(file_reference + ": " + title)
-        return title
+            try:
+                title = data['title']
+                difficulty = data[difficulty_lookup_string]
+            except:
+                title = ''
+                difficulty = -1
+            print(file_reference + ": " + title + " difficulty: " + str(difficulty))
+            save_lookup(file_reference, title, difficulty)
+            return title  # not returning difficulty yet, just saving it to local cache
+
+
+def local_lookup(file_reference):
+    filename = "cache/lookups.json"
+    try:
+        with open(filename, 'r+') as file:
+            data = json.load(file)
+            for entry in data["lookups"]:
+                if file_reference in entry:
+                    return entry[file_reference][0]
+                else:
+                    return ''
+    except FileNotFoundError:
+        if not os.path.exists(filename.split('/')[0]):
+            os.makedirs(filename.split('/')[0])
+        print("File not found when performing local lookup, creating new file")
+        with open(filename, 'w+') as file:
+            data = {
+                "lookups": {}
+            }
+            json.dump(data, file, indent=4)
+        local_lookup(file_reference)  # once FileNotFoundError is fixed, recursively call this function
+
+
+def save_lookup(file_reference, title, difficulty):
+    filename = "cache/lookups.json"
+    new_entry = {file_reference: [title, difficulty]}
+    with open(filename, 'r+') as file:
+        data = json.load(file)
+        data["lookups"].append(new_entry)
+        file.seek(0)
+        json.dump(data, file, indent=4)
+
+
+def get_custom_song_difficulty(title):
+    difficulty = -1
+    filename = "cache/lookups.json"
+    try:
+        with open(filename, 'r+') as file:
+            data = json.load(file)
+            for entry in data["lookups"][0]:
+                if title in entry:
+                    difficulty = entry[title][1]
+    except FileNotFoundError:
+        print("File not found when looking up difficulty")
+        pass
+    return int(difficulty)
 
 
 # defines index.html as the render template for flask
@@ -52,13 +106,36 @@ def work_with_file():
 
         json_data = json.loads(unparsed_data)
         song_attempts_data = json_data['largeStringValuesContainer']['values']  # drilling down to the data we want
-        
-        custom_or_original = request.values.get("custom")  # get the value of the custom radio button
 
-        # save file records song attempts/completions as a 5 item array
         difficulty_index = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4}
         difficulty = request.values.get('difficulty')  # get the value of the difficulty radio button
         difficulty_index = difficulty_index[difficulty]
+        
+        custom_or_original = request.values.get("custom")  # get the value of the custom radio button
+        enable_difficulty_range = request.values.get("difficulty_range")  # get the value of the difficulty range checkbox
+        if enable_difficulty_range == "on":  # enable filtering by difficulty range
+            difficulty_range_enabled = True
+            min_difficulty = int(request.values.get("min_difficulty"))
+            max_difficulty = int(request.values.get("max_difficulty"))
+            difficulty_range = [min_difficulty, max_difficulty]
+            difficulty_lookup_string = ''
+            match difficulty_index:
+                case 0:
+                    difficulty_lookup_string = 'easyDifficulty'    # These are the names that the spinsha.re api gives the difficulties
+                case 1:
+                    difficulty_lookup_string = 'normalDifficulty'
+                case 2:
+                    difficulty_lookup_string = 'hardDifficulty'
+                case 3:
+                    difficulty_lookup_string = 'expertDifficulty'
+                case 4:
+                    difficulty_lookup_string = 'XDDifficulty'
+
+        else:
+            difficulty_lookup_string = ''
+            difficulty_range_enabled = False
+            difficulty_range = [-1, -1]
+        # save file records song attempts/completions as a 5 item array
 
         sort_by = request.values.get('sort')  # get the value of the sort radio button (Attempts or Completions)
 
@@ -135,36 +212,51 @@ def work_with_file():
             custom_song_titles = []  # list of custom song titles
             custom_song_attempts = []  # list of custom song attempts
             custom_song_completions = []  # list of custom song completions
+            custom_song_difficulties = []  # list of custom song difficulties
             for i in range(len(song_titles)):
-                try:
-                    if custom_lookups < 50:
-                        translated_title = custom_string_to_title(song_titles[i])   # rename to the actual song title
-                        # if lookup fails, or if song has never been attempted, remove it from the list
-                        if translated_title == '' or song_attempts[i] == 0:
-                            # song_titles.remove(song_titles[i])
-                            # song_attempts.remove(song_attempts[i])
-                            # song_completions.remove(song_completions[i])
-                            # continue
-                            continue
-                        # if we've already looked up another version of this song, don't increment the counter
-                        elif translated_title in custom_song_titles:
-                            index = song_titles.index(translated_title)
-                            custom_song_attempts[index] += song_attempts[i]  # combine the attempts and completions
-                            custom_song_completions[index] += song_completions[i]
-                            continue
-                        else:  # lookup successful, first time we've seen this song, increment counter
+                if difficulty_range_enabled:  # if the user wants to filter by difficulty range
+                    translated_title = custom_string_to_title(song_titles[i], difficulty_lookup_string)  # rename to the actual song title
+                    difficulty = get_custom_song_difficulty(translated_title)  # get the difficulty of the song
+                    # if lookup fails, or if song has never been attempted, remove it from the list
+                    if translated_title == '' or song_attempts[i] == 0:
+                        continue
+                    # if we've already looked up another version of this song
+                    elif translated_title in custom_song_titles:
+                        index = song_titles.index(translated_title)
+                        custom_song_attempts[index] += song_attempts[i]  # combine the attempts and completions
+                        custom_song_completions[index] += song_completions[i]
+                        continue
+                    else:  # lookup successful, first time we've seen this song
+                        if difficulty_range[0] <= difficulty <= difficulty_range[1]:  # if the song is in the difficulty range
                             song_titles[i] = translated_title
                             custom_song_titles.append(translated_title)
                             custom_song_attempts.append(song_attempts[i])
                             custom_song_completions.append(song_completions[i])
-                            custom_lookups += 1
-                    else:  # we've collected our 50 custom songs, now prune the rest
-                        # song_titles.remove(song_titles[i])
-                        # song_attempts.remove(song_attempts[i])
-                        # song_completions.remove(song_completions[i])
+                        else:
+                            print('Song not in range, skipping...')
+                else:  # if the user doesn't want to filter by difficulty range
+                    try:
+                        if custom_lookups < 50:
+                            translated_title = custom_string_to_title(song_titles[i])   # rename to the actual song title
+                            # if lookup fails, or if song has never been attempted, remove it from the list
+                            if translated_title == '' or song_attempts[i] == 0:
+                                continue
+                            # if we've already looked up another version of this song, don't increment the counter
+                            elif translated_title in custom_song_titles:
+                                index = song_titles.index(translated_title)
+                                custom_song_attempts[index] += song_attempts[i]  # combine the attempts and completions
+                                custom_song_completions[index] += song_completions[i]
+                                continue
+                            else:  # lookup successful, first time we've seen this song, increment counter
+                                song_titles[i] = translated_title
+                                custom_song_titles.append(translated_title)
+                                custom_song_attempts.append(song_attempts[i])
+                                custom_song_completions.append(song_completions[i])
+                                custom_lookups += 1
+                        else:  # if we've looked up 50 songs, stop looking
+                            pass
+                    except IndexError:
                         pass
-                except IndexError:
-                    pass
             song_titles = custom_song_titles
             song_attempts = custom_song_attempts
             song_completions = custom_song_completions

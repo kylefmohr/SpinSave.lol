@@ -13,6 +13,17 @@
                document.getElementById("custom_div").style.display = "none";
             }
          }
+         function difficulty_range_enabled()
+         {
+            if(document.getElementById("difficulty_range").checked)
+            {
+               document.getElementById("range_div").style.display = "block";
+            }
+            else
+            {
+               document.getElementById("range_div").style.display = "none";
+            }
+         }
       </script>
       <form action = "" method = "post" enctype = "multipart/form-data">
          <input type = "file" name = "file" /><br><br>
@@ -23,7 +34,17 @@
          <label for="custom">Custom Songs</label>
          <div id="custom_div" style="display:none">
             <p>(limited to 50 songs you downloaded from <a href="https://spinsha.re">spinsha.re</a>, in order of song attempts. page may load for ~1 minute after you click submit)</p>
+            <input type = "checkbox" name = "difficulty_range" value = "difficulty_range" id="difficulty_range" onclick="difficulty_range_enabled()">
+            <label for="difficulty_range">Filter Songs By Difficulty?</label><br>
 
+            <div id="range_div" style="display:none">
+               <label for="difficulty_range_min">Minimum Difficulty:</label>
+               <input type = "number" name = "difficulty_range_min" id = "difficulty_range_min" min="0" max="100" value="30"><br>
+               <label for="difficulty_range_max">Maximum Difficulty:</label>
+               <input type = "number" name = "difficulty_range_max" id = "difficulty_range_max" min="0" max="100" value="40"><br>
+               <p>May take SIGNIFICANTLY longer to load the first time if you have a lot of songs.</p>
+               <p>However subsequent requests with different difficulty ranges will be much faster.</p>
+            </div>
          </div>
          <br><br>
          <input type = "radio" id="easy" name="difficulty" value="easy">
