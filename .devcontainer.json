@@ -1,0 +1,30 @@
+{
+    "name": "SpinSave.lol",
+    
+     "settings": {
+       "terminal.integrated.shell.linux": "/bin/bash"
+     },
+    "build":{
+      "dockerfile": "Dockerfile"
+    },
+  
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+      "github.copilot",
+      "github.copilot-labs",
+      "ms-vscode.cpptools",
+      "hookyqr.beautify",
+      "zhuangtongfa.material-theme",
+      "ms-python.python",
+      "ritwickdey.liveserver",
+      "visualstudioexptteam.vscodeintellicode"
+    ],
+  
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    //"forwardPorts": [8010, 8011, 8012, 8013, 8014, 8015, 8016, 8017, 8018, 8019, 8020],
+    // Use 'postCreateCommand' to run commands after the container is created.
+    //"postCreateCommand": "sudo apt update && sudo apt full-upgrade -y && sudo apt install python3-pip python3-venv build-essential -y && pip3 install -U pip && pip3 install platformio && sudo chsh -s /bin/bash && echo 'export PATH=\"$PATH:/home/kyle/.local/bin\"' >> ~/.bashrc",
+  
+    // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "remoteUser": "kyle"
+  }
