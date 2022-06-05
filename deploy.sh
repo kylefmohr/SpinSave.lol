@@ -20,7 +20,7 @@ After=network.target
 User=root
 Group=www-data
 WorkingDirectory=/root/SpinSave.lol
-ExecStart=/root/SpinSave.lol/bin/gunicorn --access-logfile - --workers 3 --bind unix:/var/log/gunicorn/app.sock app:app
+ExecStart=/root/SpinSave.lol/bin/gunicorn --access-logfile - --workers 3 --timeout 600 --bind unix:/var/log/gunicorn/app.sock app:app
 
 [Install]
 WantedBy=multi-user.target
@@ -43,5 +43,72 @@ EOF
 
 ln -s /etc/nginx/sites-available/spinsave /etc/nginx/sites-enabled/
 nginx -t
+rm /etc/nginx/nginx.conf
+
+#This is just the default nginx.conf with "client_max_body_size 64M;" added to prevent 413 error
+cat <<EOF > /etc/nginx/nginx.conf
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+        worker_connections 768;
+        # multi_accept on;
+}
+
+http {
+        client_max_body_size 64M;
+        ##
+        # Basic Settings
+        ##
+
+        sendfile on;
+        tcp_nopush on;
+        types_hash_max_size 2048;
+        # server_tokens off;
+
+        # server_names_hash_bucket_size 64;
+        # server_name_in_redirect off;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        ##
+        # SSL Settings
+        ##
+
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
+        ssl_prefer_server_ciphers on;
+
+        ##
+        # Logging Settings
+        ##
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        ##
+        # Gzip Settings
+        ##
+
+        gzip on;
+
+        # gzip_vary on;
+        # gzip_proxied any;
+        # gzip_comp_level 6;
+        # gzip_buffers 16 8k;
+        # gzip_http_version 1.1;
+        # gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+        ##
+        # Virtual Host Configs
+        ##
+
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}
+EOF
+
 systemctl restart nginx
 certbot --nginx -d spinsave.lol -d www.spinsave.lol
