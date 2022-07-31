@@ -101,7 +101,8 @@ def work_with_file():
                        'song_completions': [],
                        'high_score': [],
                        'best_accuracy': [],
-                       'best_streak': []}
+                       'best_streak': [],
+                       'performance': []}
         for i in range(len(stats)):  # loops through each song in the list of either custom or original songs
             new_stats[i] = json.loads(stats[i])
             new_stats[i] = new_stats[i].values()
@@ -116,6 +117,12 @@ def work_with_file():
                 final_stats['best_streak'].append(new_stats[i][2][difficulty_index]['valueForDifficulty'])
             except IndexError:
                 pass
+            try:
+                final_stats['performance'].append(new_stats[i][5][difficulty_index])
+                print(new_stats[i][5][difficulty_index])
+            except:
+                pass
+        exit()
 
         song_attempts = []
         song_completions = []
