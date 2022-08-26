@@ -10,6 +10,14 @@ plt.switch_backend('Agg')
 from flask import Flask, render_template, request, redirect
 from werkzeug.utils import secure_filename
 
+import mpld3
+
+import random, string
+
+letters = string.ascii_lowercase
+numbers = string.digits
+keyspace = letters + numbers
+
 app = Flask(__name__)
 
 
@@ -180,7 +188,12 @@ def work_with_file():
         ax.legend(['Times Attempted', 'Times Completed'])
         ax.set_title('Song Attempts vs. Completions')
         fig.savefig('static/attempts.png', dpi=108)
-        return redirect('static/attempts.png')  # return the graph to the user
+        udid = ''.join(random.choice(keyspace) for i in range(16))
+        html_str = mpld3.fig_to_html(fig)
+        html_file = open("static/" + udid + "/index.html", "w")
+        html_file.write(html_str)
+        html_file.close()
+        return redirect("static/" + udid + "/index.html")  # return the graph to the user
 
 
 if __name__ == '__main__':
