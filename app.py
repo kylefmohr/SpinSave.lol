@@ -53,19 +53,19 @@ def work_with_file():
             unparsed_data = f.read()
 
         json_data = json.loads(unparsed_data)
-        song_attempts_data = json_data['largeStringValuesContainer']['values']  # drilling down to the data we want
+        song_save_data = json_data['largeStringValuesContainer']['values']  # drilling down to the data we want
 
         custom_or_original = request.values.get("custom")  # get the value of the custom radio button
 
         # save file records song attempts/completions as a 5 item array
-        difficulty_dict = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4}
+        difficulty_dict = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3, 'XD': 4, 'remixd': 5}
         difficulty = request.values.get('difficulty')  # get the value of the difficulty radio button
         difficulty_index = difficulty_dict[difficulty]
 
         sort_by = request.values.get('sort')  # get the value of the sort radio button (Attempts or Completions)
 
         song_attempts = {}
-        for current_song in song_attempts_data:  # separate songs into custom and regular, and remove extraneous entries
+        for current_song in song_save_data:  # separate songs into custom and regular, and remove extraneous entries
             song_title_in_file = current_song['key']
             if song_title_in_file == 'MouseUserInputMapping' or song_title_in_file == 'KeyboardUserInputMapping' or not song_title_in_file.endswith(
                     '_Stats'):  # remove extraneous entries
@@ -107,15 +107,16 @@ def work_with_file():
             elif custom_or_original == 'original' and k.startswith(
                     'CUSTOM_'):  # filter out custom songs if user selected originals
                 continue
-            try:
-                final_stats['performance_visualization'].append(v.get('performances')[difficulty_index].get('v'))
-            except TypeError:  # this error is likely hit when the save data for this song hasn't been upgraded to the new format. playing the song once after the update should fix this.
-                continue
-            final_stats['song_title'].append(k)
-            final_stats['song_attempts'].append(v.get('timesAttemptedDifficulty')[difficulty_index])
-            final_stats['song_completions'].append(v.get('timesCompletedDifficulty')[difficulty_index])
-            final_stats['high_score'].append(v.get('bestScoresForDifficulty')[difficulty_index])
-            final_stats['best_streak'].append(v.get('bestStreakForDifficulty')[difficulty_index])
+            # try:
+            #     final_stats['performance_visualization'].append(v.get('performances')[difficulty_index].get('v'))
+            # except TypeError:  # this error is likely hit when the save data for this song hasn't been upgraded to the new format. playing the song once after the update should fix this.
+            #     continue
+            if k is not None and v is not None and v.get('tries') is not None:
+                final_stats['song_title'].append(k)
+                final_stats['song_attempts'].append(v.get('tries')[difficulty_index])
+                final_stats['song_completions'].append(v.get('wins')[difficulty_index])
+                final_stats['high_score'].append(v.get('scores')[difficulty_index]['v'])
+                final_stats['best_streak'].append(v.get('streaks')[difficulty_index]['v'])
 
         song_attempts = []
         song_completions = []

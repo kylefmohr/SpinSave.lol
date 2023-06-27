@@ -1,0 +1,7 @@
+ci_access:
+  # This agent is accessible from CI jobs in projects in these groups
+  groups:
+  - id: kyle/SpinSave-lol
+remote_development:
+  enabled: true
+  dns_zone: "assf.art"
