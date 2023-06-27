@@ -1,4 +1,4 @@
-# SpinSave.lol
+# Hosted at https://spinsave-lol.onrender.com
 A WIP web application to help you visualize your Spin Rhythm save file
 
 If you'd like to run/host this yourself, make sure Python is installed, clone this project, and install the depenedencies with `pip3 install -r requirements.txt`. Then, just run app.py and it should be accessible at http://127.0.0.1:80
